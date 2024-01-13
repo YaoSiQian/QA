@@ -21,24 +21,10 @@ export const generatePayload = (
   },
   method: "POST",
   body: JSON.stringify({
-    model: "gpt-3.5-turbo",
+    model: "gpt-3.5-turbo-0301",
     messages,
     temperature: 0.6,
     stream: true,
-  }),
-});
-
-export const generateProxyPayload = (messages: ChatMessage[]): RequestInit => ({
-  headers: {
-    "Content-Type": "application/json",
-    "App-Key": "1",
-    "App-Secret": "RTX4090",
-  },
-  method: "POST",
-  body: JSON.stringify({
-    model: "gpt-3.5-turbo",
-    messages,
-    temperature: 0.6,
   }),
 });
 
@@ -78,33 +64,19 @@ export const parseOpenAIStream = (rawResponse: Response) => {
 
 export const getCreditGrants = async (apiKey: string) => {
   try {
-    const formatDate = (d: Date) =>
-      `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d
-        .getDate()
-        .toString()
-        .padStart(2, "0")}`;
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-    const now = new Date(Date.now() + ONE_DAY);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startDate = formatDate(startOfMonth);
-    const endDate = formatDate(now);
-    const res = await fetch(
-      `${baseUrl}/dashboard/billing/usage?start_date=${startDate}&end_date=${endDate}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey.trim()}`,
-        },
-        method: "GET",
-      }
-    );
+    const res = await fetch(`${baseUrl}/dashboard/billing/credit_grants`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`,
+      },
+      method: "GET",
+    });
     if (res.status === 200) {
       const resJson = await res.json();
-      const used = resJson.total_usage / 100;
-      return `$${used?.toFixed(2)}`;
+      return `$${resJson.total_used.toFixed(2)} / $${resJson.total_granted}`;
     }
-    return "出错了";
+    return "无效密钥";
   } catch (error) {
-    return `代理错误`;
+    return `寄了`;
   }
 };

@@ -17,7 +17,7 @@ import {
   getCreditGrants,
   generateSignature,
 } from "@/utils";
-import PromptList from "@/data/prompts-zh.json";
+import PromptList from "@/data/prompts-psy.json";
 import MessageItem from "./MessageItem";
 import Setting from "./Setting";
 import TextError from "./Error";
@@ -29,15 +29,12 @@ import IconClear from "./icons/Clear";
 import IconSend from "./icons/Send";
 import IconStop from "./icons/Stop";
 import type { ChatMessage } from "@/types";
-import { Toaster } from "solid-toast";
-import { DAO, PRO_URL } from "@/contants";
 
 export type Setting = typeof defaultToggleSetting;
 
 export default () => {
   let inputRef: HTMLTextAreaElement;
   let inputKeyRef: HTMLInputElement;
-  let inputCodeRef: HTMLInputElement;
   let autoScrolling = true;
   const eventTypes = ["wheel", "touchmove", "keydown"];
 
@@ -49,13 +46,10 @@ export default () => {
   const [controller, setController] = createSignal<AbortController>(null);
   const [balance, setBalance] = createSignal("--");
   const [setting, setSetting] = createSignal(defaultToggleSetting);
-  const [isLoadStorage, setIsLoadStorage] = createSignal(false);
-  const [iShowWaimai, setIsShowWaimai] = createSignal(true);
 
-  onMount(async () => {
-    inputCodeRef.value = getCustomKey("access-code");
-    if (getCustomKey("custom-key") !== "") {
-      getCreditGrants(getCustomKey("custom-key")).then((res) => {
+  onMount(() => {
+    if (getCustomKey() !== "") {
+      getCreditGrants(getCustomKey()).then((res) => {
         setBalance(res);
       });
     }
@@ -66,7 +60,6 @@ export default () => {
 
     const storage = localStorage.getItem("setting");
     const session = localStorage.getItem("session");
-
     try {
       let autoSaveSession = false;
       if (storage) {
@@ -77,10 +70,6 @@ export default () => {
           ...defaultToggleSetting,
           ...parsed,
         });
-        setIsLoadStorage(true);
-      } else {
-        localStorage.setItem("setting", JSON.stringify(defaultToggleSetting));
-        setIsLoadStorage(true);
       }
       if (session && autoSaveSession) {
         setMessageList(JSON.parse(session));
@@ -91,19 +80,9 @@ export default () => {
   });
 
   createEffect(() => {
-    if (!getCustomKey("access-code")) {
-      alert("连续对话需要在设置页填写授权码哦~");
-    }
-  });
-
-  createEffect(() => {
-    if (isLoadStorage()) {
-      localStorage.setItem("setting", JSON.stringify(setting()));
-    }
-
-    if (setting().autoSaveSession && messageList().length > 0) {
+    localStorage.setItem("setting", JSON.stringify(setting()));
+    if (setting().autoSaveSession)
       localStorage.setItem("session", JSON.stringify(messageList()));
-    }
   });
 
   onCleanup(() => {
@@ -112,7 +91,7 @@ export default () => {
     });
   });
 
-  const eventHandler = (e: KeyboardEvent) => {
+  const eventHandler = (e) => {
     if (e.type === "keydown") {
       if (e.key !== "ArrowUp" && e.key !== "ArrowDown") {
         return;
@@ -138,45 +117,13 @@ export default () => {
     }
   };
 
-  // const requestRealtimeOnline = async () => {
-  //   const response = await fetch("/api/online");
-
-  //   if (response.ok) {
-  //     const reader = response.body.getReader();
-  //     const decoder = new TextDecoder("utf-8");
-  //     const { value } = await reader.read();
-  //     let char = decoder.decode(value);
-  //     setOnline(char);
-  //   } else {
-  //     setOnline("1000");
-  //   }
-  // };
-  // const requestTotalCount = async () => {
-  //   const response = await fetch("/api/requestCount");
-
-  //   if (response.ok) {
-  //     const reader = response.body.getReader();
-  //     const decoder = new TextDecoder("utf-8");
-  //     const { value } = await reader.read();
-  //     let char = decoder.decode(value);
-  //     setReqCount(char);
-  //   } else {
-  //     setReqCount("请求有点多");
-  //   }
-  // };
-
-  const requestMode = () => {
-    setting().useProxyApi
-      ? requestWithLatestMessageProxy()
-      : requestWithLatestMessage();
-  };
   const handleButtonClick = async () => {
     if (
-      getCustomKey("custom-key") === "" &&
+      getCustomKey() === "" &&
       inputKeyRef.value === "" &&
       !setting().useFreeKey
     ) {
-      setError("OpenAI API 密钥不能为空");
+      setError("API 密钥不能为空");
       setCurrentAssistantMessage("");
       return;
     }
@@ -193,8 +140,7 @@ export default () => {
         content: inputValue,
       },
     ]);
-
-    requestMode();
+    requestWithLatestMessage();
   };
   const requestKeyBalance = async () => {
     if (inputKeyRef.value !== "") {
@@ -203,40 +149,6 @@ export default () => {
       });
     }
   };
-  ``;
-
-  const requestFeedback = async (msgs: ChatMessage[], timestamp: number) => {
-    const res = await fetch("/api/feedback", {
-      method: "POST",
-      body: JSON.stringify({
-        messages: msgs,
-        code: inputCodeRef.value || "",
-        time: timestamp,
-        sign: await generateSignature({
-          t: timestamp,
-          m: msgs?.[msgs.length - 1]?.content || "",
-        }),
-      }),
-    });
-    if (!res.ok) {
-      setLoading(false);
-      setError("响应出错了");
-      throw new Error(res.statusText);
-    }
-    const data = res.body;
-    const reader = data.getReader();
-    const decoder = new TextDecoder("utf-8");
-    const { value, done: readerDone } = await reader.read();
-    let char = decoder.decode(value);
-    let parsed = JSON.parse(char);
-    if (parsed && parsed.code === 200) {
-      return true;
-    }
-    setLoading(false);
-    setError("非法输入");
-    return false;
-  };
-
   const requestWithLatestMessage = async () => {
     autoScrolling = true;
     setLoading(true);
@@ -244,35 +156,23 @@ export default () => {
     try {
       const controller = new AbortController();
       setController(controller);
-      let requestMessageList = [];
-      if (setting().continuousConversation) {
-        requestMessageList = [...messageList()];
-      } else {
-        requestMessageList = [messageList()[messageList().length - 1]];
-      }
+      const requestMessageList = [...messageList()];
 
       setError("");
-      setCustomKey("access-code", inputCodeRef.value);
+      setCustomKey(inputKeyRef.value);
 
       inputKeyRef.value = "";
       inputKeyRef.placeholder =
-        getCustomKey("custom-key") !== ""
-          ? hideKey(getCustomKey("custom-key"))
-          : "请填写 OpenAI API 密钥";
+        getCustomKey() !== ""
+          ? hideKey(getCustomKey())
+          : "API 密钥（测试用）";
 
       const timestamp = Date.now();
-      const test = await requestFeedback(requestMessageList, timestamp);
-
-      if (!test) {
-        return;
-      }
       const response = await fetch("/api/generate", {
         method: "POST",
         body: JSON.stringify({
           messages: requestMessageList,
-          customKey: getCustomKey("custom-key"),
-          code: inputCodeRef.value || "",
-          continuous: setting().continuousConversation,
+          customKey: getCustomKey(),
           time: timestamp,
           sign: await generateSignature({
             t: timestamp,
@@ -283,7 +183,6 @@ export default () => {
         }),
         signal: controller.signal,
       });
-
       if (!response.ok) {
         setLoading(false);
         setError("响应出错了");
@@ -313,82 +212,7 @@ export default () => {
       }
       setLoading(false);
     } catch (e) {
-      setLoading(false);
-      setController(null);
-      inputRef.focus();
-      return;
-    }
-    archiveCurrentMessage();
-  };
-  const requestWithLatestMessageProxy = async () => {
-    autoScrolling = true;
-    setLoading(true);
-    setCurrentAssistantMessage("");
-    try {
-      const controller = new AbortController();
-      setController(controller);
-      let requestMessageList = [];
-      if (setting().continuousConversation) {
-        requestMessageList = [...messageList()];
-      } else {
-        requestMessageList = [messageList()[messageList().length - 1]];
-      }
-
-      setError("");
-
-      inputKeyRef.value = "";
-      inputKeyRef.placeholder =
-        getCustomKey("custom-key") !== ""
-          ? hideKey(getCustomKey("custom-key"))
-          : "请填写 OpenAI API 密钥";
-
-      const timestamp = Date.now();
-      requestFeedback(requestMessageList, timestamp);
-      const response = await fetch("/api/proxy", {
-        method: "POST",
-        body: JSON.stringify({
-          messages: requestMessageList,
-          customKey: getCustomKey("custom-key"),
-          time: timestamp,
-          sign: await generateSignature({
-            t: timestamp,
-            m:
-              requestMessageList?.[requestMessageList.length - 1]?.content ||
-              "",
-          }),
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        setLoading(false);
-        setError("响应出错了");
-        throw new Error(response.statusText);
-      }
-      const data = response.body;
-
-      if (!data) {
-        throw new Error("No data");
-      }
-      const reader = data.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let done = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader?.read();
-        if (value) {
-          let char = decoder.decode(value);
-          let parse = JSON.parse(char) || {};
-
-          if (parse?.choices[0]?.message?.content) {
-            setCurrentAssistantMessage(parse?.choices[0]?.message?.content);
-          }
-          startAutoScroll();
-        }
-        done = readerDone;
-      }
-      setLoading(false);
-    } catch (e) {
+      console.error(e);
       setLoading(false);
       setController(null);
       inputRef.focus();
@@ -415,7 +239,6 @@ export default () => {
     inputRef.value = "";
     inputRef.style.height = "auto";
     setMessageList([]);
-    localStorage.setItem("session", JSON.stringify([]));
     setCurrentAssistantMessage("");
     inputRef.focus();
   };
@@ -431,8 +254,8 @@ export default () => {
       const lastMessage = messageList()[messageList().length - 1];
       if (lastMessage.role === "assistant") {
         setMessageList(messageList().slice(0, -1));
+        requestWithLatestMessage();
       }
-      requestMode();
     }
   };
   const handleDeleteMsg = (index: number) => {
@@ -458,57 +281,20 @@ export default () => {
     <ul class="tree">
       <li>
         <details mb-4>
-          <summary>
-            <div class="flex justify-between items-end text-slate">
-              <p>高级设置</p>
-              {renderProInfo}
-              {/* <div class="flex ml-auto items-center" text-sm>
-                <span class="online-dot mr-2.5 mt-0.03"></span>
-                <span>{online} 在线</span>
-              </div> */}
-              {/* <div class="flex items-center" text-sm>
-                <span class="request-dot mr-2.5 mt-0.03"></span>
-                <span>{reqCount}</span>
-              </div> */}
-            </div>
-          </summary>
+          <summary text-slate>高级设置</summary>
           <div class="mt-4 pb-2">
             <div class="api-key">
-              <div class="flex mb-2">
-                <input
-                  ref={inputCodeRef!}
-                  type="password"
-                  placeholder={"请填写授权码"}
-                  autocomplete="off"
-                  w-full
-                  px-4
-                  py-2
-                  h-10
-                  min-h-10
-                  text-slate-700
-                  rounded-l
-                  bg-slate
-                  bg-op-15
-                  focus:bg-op-20
-                  focus:ring-0
-                  focus:outline-none
-                  placeholder:text-slate-900
-                  placeholder:op-30
-                />
-              </div>
               <div class="flex">
                 <input
                   ref={inputKeyRef!}
                   type="text"
+                  disabled
                   placeholder={`${
-                    getCustomKey("custom-key") !== ""
-                      ? hideKey(getCustomKey("custom-key"))
-                      : "请填写 OpenAI API 密钥"
+                    getCustomKey() !== ""
+                      ? hideKey(getCustomKey())
+                      : "API 密钥（测试用）"
                   }`}
-                  onBlur={() => {
-                    setCustomKey("custom-key", inputKeyRef.value);
-                    requestKeyBalance();
-                  }}
+                  onBlur={requestKeyBalance}
                   autocomplete="off"
                   w-full
                   px-4
@@ -526,15 +312,16 @@ export default () => {
                   placeholder:op-30
                 />
                 <button
+                  disabled
                   title="清空密钥"
                   onClick={() => {
                     clearCustomKey();
                     setBalance("--");
                     inputKeyRef.value = "";
                     inputKeyRef.placeholder =
-                      getCustomKey("custom-key") !== ""
-                        ? hideKey(getCustomKey("custom-key"))
-                        : "请填写 OpenAI API 密钥";
+                      getCustomKey() !== ""
+                        ? hideKey(getCustomKey())
+                        : "API 密钥（测试用）";
                   }}
                   h-10
                   px-4
@@ -548,33 +335,6 @@ export default () => {
                   rounded-r>
                   <IconClear />
                 </button>
-              </div>
-              <div class="flex justify-between items-center ml-1 mt-2">
-                <p>
-                  <a
-                    text-sm
-                    text-slate-4
-                    border-b
-                    border-slate
-                    border-none
-                    hover:border-dashed
-                    href="https://shop.taoist.fun/"
-                    target="_blank">
-                    购买 OpenAI API 账号/密钥
-                  </a>
-                </p>
-
-                <p text-sm text-slate-4>
-                  本月已使用:{" "}
-                  <span
-                    border-b
-                    border-slate
-                    border-none
-                    hover:border-dashed
-                    text-slate-5>
-                    {balance()}
-                  </span>
-                </p>
               </div>
             </div>
 
@@ -595,7 +355,10 @@ export default () => {
             role={message().role}
             message={message().content}
             loading={loading}
-            showRetry={() => index === messageList().length - 1}
+            showRetry={() =>
+              message().role === "assistant" &&
+              index === messageList().length - 1
+            }
             onRetry={retryLastFetch}
             onDelete={() => handleDeleteMsg(index)}
           />
@@ -616,7 +379,7 @@ export default () => {
       <textarea
         ref={inputRef!}
         id="input"
-        placeholder="说点什么 (设置可开启连续对话)... "
+        placeholder="说点什么……"
         rows="1"
         resize-none
         autocomplete="off"
@@ -660,29 +423,14 @@ export default () => {
       </button>
     </div>
   );
-  const renderProInfo = () => (
-    <div>
-      <a
-        text-sm
-        text-slate-5
-        border-b
-        border-slate
-        border-none
-        hover:border-dashed
-        href={DAO}
-        target="_blank">
-        Pro不限速版已上线
-      </a>
-    </div>
-  );
 
   return (
     <div class="my-6 flex flex-col">
       <p class="text-pink-600 text-sm mb-1">
-        永久免费不限速，应用市场搜索「美兔优选」，一起来Chat吧~
+        是一个暖心小天使，有时会<strong>摸摸你的头</strong>╰(￣ω￣ｏ)
       </p>
       <p class="text-pink-600 text-sm mb-1">
-        每日抽奖活动开始啦：ChatGPT手工注册谷歌账号免费领，5美金额度API-key，进群（634323049）即可参与抽奖~{" "}
+        这里是部分功能的在线体验，完整版请到我的展位 <strong>AI工程实践 AH-02-00192</strong> 看看。
       </p>
       {renderAdvancedSettings()}
       {renderMessageWrapper()}
@@ -707,9 +455,9 @@ export default () => {
                 bg-slate
                 bg-op-15
                 items-center
+                hover:bg-slate-500
                 transition-colors
                 text-slate
-                hover:bg-slate-500
                 hover:text-slate-1
                 rounded-r
                 onClick={stopStreamFetch}>
@@ -725,9 +473,7 @@ export default () => {
           onClear={clear}
           onRandom={handleRandomPrompt}
         />
-
-        <Footer setWaimai={setIsShowWaimai} />
-        <Toaster />
+        <Footer />
       </div>
     </div>
   );

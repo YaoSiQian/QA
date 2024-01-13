@@ -25,7 +25,7 @@ export default ({ loading, onClear, onRandom }: Props) => {
         onClick={onClear}
         transition-colors
         hover:text-slate-5>
-        <IconClear /> 清空
+        <IconClear /> 清空会话
       </button>
     </div>
   );

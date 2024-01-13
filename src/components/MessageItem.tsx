@@ -6,8 +6,8 @@ import MarkdownIt from "markdown-it";
 import mdKatex from "markdown-it-katex";
 import mdHighlight from "markdown-it-highlightjs";
 import IconRefresh from "./icons/Refresh";
-import Clear from "./icons/Clear";
 import Clipboard from "./Clipboard";
+import Clear from "./icons/Clear";
 
 interface Props {
   role: ChatMessage["role"];
@@ -18,14 +18,7 @@ interface Props {
   onDelete?: () => void;
 }
 
-export default ({
-  role,
-  message,
-  loading,
-  showRetry,
-  onRetry,
-  onDelete,
-}: Props) => {
+export default ({ role, message, loading, showRetry, onRetry, onDelete }: Props) => {
   const [showCopy, setShowCopy] = createSignal(false);
 
   const roleClass = {
@@ -65,7 +58,6 @@ export default ({
             right-12
             z-1
             title="重试"
-            disabled={loading()}
             onClick={onRetry}
             style={{ "margin-top": "-25px" }}
             text-center
@@ -81,7 +73,7 @@ export default ({
             <IconRefresh />
           </button>
         )}
-        <button
+          <button
           class="absolute"
           bottom-0
           right-4
@@ -102,7 +94,6 @@ export default ({
           rounded-1>
           <Clear />
         </button>
-
         <Toaster />
       </div>
     </div>

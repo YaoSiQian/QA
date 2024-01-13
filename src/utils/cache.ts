@@ -1,11 +1,11 @@
-export const setCustomKey = (key: string, value: string) => {
+export const setCustomKey = (key: string) => {
   if (typeof window !== "undefined" && key) {
-    localStorage.setItem(key, value);
+    localStorage.setItem("custom-key", key);
   }
 };
-export const getCustomKey = (key: string) => {
+export const getCustomKey = () => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem(key) || "";
+    return localStorage.getItem("custom-key") || "";
   }
   return "";
 };
