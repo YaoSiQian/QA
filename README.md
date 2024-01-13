@@ -4,7 +4,7 @@
 
 > tip：欢迎加入 <a href='https://t.me/yesmore_cc'><img src='https://img.shields.io/badge/-Juiçe的秘密基地-fff?logo=Telegram'/></a> 与喵娘聊天~（集成ChatGPT机器人）
 
-![web](./web.png)
+![web](https://github.com/gcloudlab/QA/raw/main/web.png)
 
 ## 特点
 
@@ -68,5 +68,3 @@ pnpm dev
 - [chatgpt-demo](https://github.com/ddiu8081/chatgpt-demo)
 - [Awesome ChatGPT Prompts](https://prompts.chat/)
 - [ChatGPT 中文调教指南](https://chatguide.plexpt.com/)
-
-<a href="https://www.buymeacoffee.com/yesmore" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>

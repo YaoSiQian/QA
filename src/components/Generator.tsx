@@ -17,7 +17,7 @@ import {
   getCreditGrants,
   generateSignature,
 } from "@/utils";
-import PromptList from "@/data/prompts-psy.json";
+import PromptList from "@https://asr-1259380910.cos.ap-shanghai.myqcloud.com/prompts-psy.json";
 import MessageItem from "./MessageItem";
 import Setting from "./Setting";
 import TextError from "./Error";
