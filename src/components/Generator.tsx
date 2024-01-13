@@ -17,7 +17,6 @@ import {
   getCreditGrants,
   generateSignature,
 } from "@/utils";
-import PromptList from "@/data/prompts-psy.json";
 import MessageItem from "./MessageItem";
 import Setting from "./Setting";
 import TextError from "./Error";
@@ -270,12 +269,43 @@ export default () => {
       handleButtonClick();
     }
   };
-  const handleRandomPrompt = async () => {
-    const _index = getRandomInt(0, PromptList.length - 1);
-    inputRef.value = PromptList[_index].prompt;
-    inputRef.style.height = "auto";
-    inputRef.style.height = inputRef.scrollHeight + "px";
+
+  const PROMPTS_CACHE_KEY = 'cachedPrompts';
+  const fetchPrompts = async () => {
+    try {
+      const response = await fetch('https://asr-1259380910.cos.ap-shanghai.myqcloud.com/prompts-psy.json');
+      if (!response.ok) throw new Error('Network response was not ok.');
+      const data = await response.json();
+      // 缓存数据到LocalStorage
+      localStorage.setItem(PROMPTS_CACHE_KEY, JSON.stringify(data));
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch prompts:', error);
+      return null;
+    }
   };
+  const getCachedPrompts = () => {
+    // 从LocalStorage中获取缓存的数据
+    const cachedData = localStorage.getItem(PROMPTS_CACHE_KEY);
+    if (cachedData) return JSON.parse(cachedData);
+    return null;
+  };
+  const handleRandomPrompt = async () => {
+    // 尝试从缓存中获取数据，如果没有则发起请求
+    let promptsList = getCachedPrompts();
+    if (!promptsList) {
+      promptsList = await fetchPrompts();
+    }
+  
+    if (promptsList) {
+      const _index = getRandomInt(0, promptsList.length - 1);
+      inputRef.value = promptsList[_index].prompt;
+      inputRef.style.height = 'auto';
+      inputRef.style.height = inputRef.scrollHeight + 'px';
+    }
+  };
+  
+  
 
   const renderAdvancedSettings = () => (
     <ul class="tree">

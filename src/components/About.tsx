@@ -47,6 +47,16 @@ export default () => (
         target="_blank">
         GitHub
       </a>
+      {" · "}
+      <a
+        border-b
+        border-slate
+        border-none
+        hover:border-dashed
+        href="https://beian.miit.gov.cn/"
+        target="_blank">
+        皖ICP备2022012169号-1
+      </a>
     </p>
     <details mt-1>
     <span text-lg text-slate-5>
