@@ -460,7 +460,7 @@ export default () => {
         是一个暖心小天使，有时会<strong>摸摸你的头</strong>╰(￣ω￣ｏ)
       </p>
       <p class="text-pink-600 text-sm mb-1">
-        这里是部分功能的在线体验，完整版请到我的展位 <strong>AI工程实践 AH-02-00192</strong> 看看。
+        这里是部分功能的在线体验，完整版请到我的展位 <strong>AI工程实践 02-16（AH-02-00192）</strong> 看看，也请大大<strong>为我投一票</strong>！
       </p>
       {renderAdvancedSettings()}
       {renderMessageWrapper()}

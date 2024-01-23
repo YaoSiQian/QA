@@ -26,7 +26,7 @@ export default () => (
       <span text-lg text-slate-5>
         联系
       </span>{" "}
-      展位：<strong>AI工程实践 AH-02-00192</strong>
+      展位：<strong>AI工程实践 02-16（AH-02-00192）</strong>
       {" · "}
       <a
         border-b
