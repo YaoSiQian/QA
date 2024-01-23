@@ -29,6 +29,22 @@ export default () => (
         <Github />
         <span>GitHub</span>
       </a>
+      <a
+        class="flex max-w-fit items-center justify-center space-x-2 rounded-1 border border-sky-300 bg-sky px-3 py-2 text-sm text-gray-600 shadow-sm transition-colors hover:border-sky-400 hover:bg-sky-300 hover:text-slate-2"
+        href="https://b23.tv/BV1qg4y127ep"
+        target="_blank"
+        rel="noopener noreferrer">
+        <svg
+          class="icon"
+          viewBox="0 0 1024 1024"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          p-id="1482"
+          width="18" height="18">
+          <path d="M512 78.8c-239.3 0-433.2 194-433.2 433.2 0 239.3 194 433.2 433.2 433.2 239.3 0 433.2-194 433.2-433.2 0.1-239.2-193.9-433.2-433.2-433.2z m183.3 447.9L455.1 720c-12.3 9.9-30.5 1.1-30.5-14.6V318.7c0-15.7 18.2-24.5 30.5-14.6l240.2 193.4c9.4 7.5 9.4 21.7 0 29.2z" fill="#ffffff" p-id="1483"></path>
+        </svg>
+        <span text-slate-800>演示视频</span>
+      </a>
     </div>
   </footer>
 );
